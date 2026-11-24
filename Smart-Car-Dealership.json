@@ -1,0 +1,66 @@
+{
+  "name": "Smart Car Dealership",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "your-webhook-path",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e1e6b923-9fe6-410b-bb0c-8a9c6ac41f8d",
+      "name": "Webhook",
+      "webhookId": "REGENERATED_BY_N8N"
+    },
+    {
+      "parameters": {
+        "sendTo": "user@example.com",
+        "subject": "Smart Car Dealership",
+        "emailType": "text",
+        "message": "=Thank you for your purchase at Premium Auto Sales!\n\nYour {{ $json.body.car }} for {{ $json.body.price }} has been confirmed and is being prepared for Customer {{ $json.body.buyer }}. We'll contact you within 3–5 business days for pickup or delivery. ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        -48
+      ],
+      "id": "29152707-7cdd-4cc6-8dfa-2c615113a965",
+      "name": "Send a message",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "gmailOAuth2 (set up your own)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

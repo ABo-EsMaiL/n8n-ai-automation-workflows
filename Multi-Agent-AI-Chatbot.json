@@ -1,0 +1,1711 @@
+{
+  "name": "Multi-Agent AI Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        -624
+      ],
+      "id": "ec57384c-f40a-45f2-a803-1beb8f45cc1c",
+      "name": "WhatsApp Trigger",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "whatsAppTriggerApi (set up your own)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "YOUR_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "+20XXXXXXXXXX",
+        "textBody": "={{ $json.output || \"Something wrong! Try Again please. ❤️\"}}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        -720
+      ],
+      "id": "b1a5e087-0b1e-464d-ab33-102cce4ffcde",
+      "name": "Send message",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "whatsAppApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.Text }}",
+        "options": {
+          "systemMessage": "=You are a smart personal AI assistant for the owner of a company, integrated directly into WhatsApp.\n\n## Who you are talking to\nYou are ALWAYS talking to the company owner. His contact is the first row in the Airtable \"Employees\" table. Never mistake any other user for the owner — only his WhatsApp number triggers this bot.\n\n## Your role\n- You are the owner's intelligent assistant. Act proactively, think ahead, and always consider what the next step in the workflow requires.\n- You understand Arabic and English. Always reply in the same language the owner used.\n- You handle three input types: text messages, voice messages (already transcribed for you), and images (already analyzed for you).\n\n## Available sub-agents and when to use them\n- **Company Agent** → look up employee info, find contact details, or retrieve the owner's own data.\n- **Calendar Agent** → schedule or check meetings, send invites and confirmation emails.\n- **Social Media Agent** → create and save posts to Airtable for any platform.\n- **Gmail Agent** → send or search emails (capabilities may expand over time).\n- **Search Agent** → find any information not available in existing tools. Use this when no other agent can answer.\n\n## Routing rules\n1. Always determine which agent(s) to call based on the owner's request.\n2. If a request touches multiple agents (e.g., \"schedule a meeting with Ahmed\"), use Company Agent first to fetch the data, then Calendar Agent to create the event.\n3. Pass only the data the next agent actually needs — do not forward everything.\n4. Never use memory unless the Search Agent has already returned results in this conversation.\n\n## WhatsApp formatting rules\n- Keep every final reply under 4,000 characters.\n- Use WhatsApp-native formatting only:\n  - *bold* → *text*\n  - _italic_ → _text_\n  - ~strikethrough~ → ~text~\n  - Bullet lists → use • (not hyphens or asterisks)\n  - Numbered steps → 1. 2. 3.\n  - Section dividers → use a blank line, not —— or === lines\n- No markdown headers (# ## ###), no HTML, no code blocks.\n- For long results (e.g., a list of employees), summarize and offer to send details separately.\n\n## Tone\n- Efficient, friendly, and professional — like a smart personal assistant.\n- Address the owner respectfully. Keep things concise.\n- If something fails or is unclear, say so directly and suggest the next step.\n\n## Error handling\nIf a sub-agent fails or returns an error, reply:\n\"⚠️ حصل مشكلة في [اسم الـ Agent]. جرب تاني ولو الأمر مهم كلمني بطريقة ثانية.\"\nThen stop and do not retry automatically.\n{{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        32,
+        -624
+      ],
+      "id": "f53ce8c2-b2e7-4d80-b862-ad7e7f8f2d2f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite-preview",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        -400
+      ],
+      "id": "1f37d087-497a-4eb6-964d-1eb091bc024e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googlePalmApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WhatsApp Trigger').item.json.messages[0].from }}",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        96,
+        -400
+      ],
+      "id": "4966b668-3fea-42ca-b606-fcdfd4f8950f",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.messages[0].text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "a68af73a-2178-43da-868c-265687bcafc0"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "TEXT"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "343e1dfd-2fc6-49ee-906d-43863bb021c1",
+                    "leftValue": "={{ $json.messages[0].audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "VOICE"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2f0ed3f8-9189-49fd-bae3-90b3d5ed0bae",
+                    "leftValue": "={{ $json.messages[0].image }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "IMAGE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1152,
+        -640
+      ],
+      "id": "759cb924-1152-4369-a429-4751ed591a5b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $json.messages[0].audio.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -928,
+        -624
+      ],
+      "id": "09a92e3e-1766-4fe1-b646-2e8c665a63ec",
+      "name": "Fetch Voice URL",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "whatsAppApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        -624
+      ],
+      "id": "ec778234-4525-467c-bcc0-098b59b27ce0",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googlePalmApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -704,
+        -624
+      ],
+      "id": "04eaebe3-c11b-4c2d-b90b-20a0a44fe38f",
+      "name": "Download Voice",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "httpHeaderAuth (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bdf01a8a-ce2c-46b3-b203-8ee59bf416cb",
+              "name": "Text",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -624
+      ],
+      "id": "25c776b4-be02-4be4-9bd1-fc75f3bb53fd",
+      "name": "Voice"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bdf01a8a-ce2c-46b3-b203-8ee59bf416cb",
+              "name": "Text",
+              "value": "={{ $json.messages[0].text.body }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -816
+      ],
+      "id": "441df7e4-9471-4366-a07e-0a7f33ed83fd",
+      "name": "Text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a65cf989-4143-4e35-854e-b53fe95f0e6e",
+              "leftValue": "={{ $('WhatsApp Trigger').item.json.messages[0].audio }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        432,
+        -624
+      ],
+      "id": "d61c183d-a809-4fba-a4af-92ba99d2c3cb",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "voice": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_FILE_ID",
+          "mode": "list",
+          "cachedResultName": "Lauren - American Female (AVAILABLE)"
+        },
+        "text": "={{ $json.output }}",
+        "additionalOptions": {
+          "audioFormat": "mp3"
+        },
+        "requestOptions": {}
+      },
+      "type": "@voice-ai-labs/n8n-nodes-voice-ai.voiceAi",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -528
+      ],
+      "id": "12e6afac-b114-46d0-9701-2c0e44d73f21",
+      "name": "Convert text to speech",
+      "credentials": {
+        "voiceAiApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "voiceAiApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "YOUR_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "+20XXXXXXXXXX",
+        "messageType": "audio",
+        "mediaPath": "useMedian8n",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        -528
+      ],
+      "id": "499cf517-b4fe-439f-bb42-405d53647e06",
+      "name": "Send message1",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "whatsAppApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        -432
+      ],
+      "id": "422b070f-a50c-4ff8-bede-296fe1fe4d50",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googlePalmApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -704,
+        -432
+      ],
+      "id": "38a72d17-f7be-47e7-96bb-581dd2b90362",
+      "name": "Download Voice1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "httpHeaderAuth (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $json.messages[0].image.id }}"
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -928,
+        -432
+      ],
+      "id": "ff74c0d3-b2d1-4d0c-a0f6-75310b437cdc",
+      "name": "Fetch Image URL1",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "whatsAppApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bdf01a8a-ce2c-46b3-b203-8ee59bf416cb",
+              "name": "Text",
+              "value": "=#The author provide the image and text \n## Image Description\n{{ $json.content.parts[0].text }}\n## User Message\n{{ $('WhatsApp Trigger').item.json.messages[0].image.caption || \"Reply based on image\"}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -432
+      ],
+      "id": "3a1cdcd7-63e3-4d0b-93fd-63ed14be9e41",
+      "name": "Image Text"
+    },
+    {
+      "parameters": {
+        "content": "# **INPUT**",
+        "height": 560,
+        "width": 1312,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        -832
+      ],
+      "id": "d61e99c3-dbcb-46a3-8b5b-e77fb85276c1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# **output**",
+        "height": 416,
+        "width": 672,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -784
+      ],
+      "id": "41f3c8a8-c77c-41ab-9ef2-971f2633907f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        -400
+      ],
+      "id": "1ac5aafc-4971-4d3a-9ba1-a0467883a7f3",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemma-4-26b-a4b-it",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        32
+      ],
+      "id": "b8bf5b8a-5d7e-41b8-8272-511351d12aaa",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googlePalmApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Multi-Agent AI Chatbot",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Social Media",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_TABLE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Date', ``, 'string') }}",
+            "Theme": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Theme', ``, 'string') }}",
+            "Post": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Post', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "Name"
+          ],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Theme",
+              "displayName": "Theme",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Post",
+              "displayName": "Post",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        -256,
+        32
+      ],
+      "id": "8cec848f-02bc-466a-aa1c-b65888376c78",
+      "name": "Create a record in Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "airtableTokenApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this tool if you want to do anything related to Social Media Posts.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Social Media Agent. Your job is to create high-quality social media posts and save them to Airtable.\n\n## What you receive\nThe owner will describe what he wants to post. This can be:\n- A topic or idea (\"اعمل بوست عن خدماتنا الجديدة\")\n- A draft to polish\n- A full request including the platform\n\n## Airtable structure for posts\nSave each post with these fields:\n- Platform: [name of the platform]\n- Content: [the full post text]\n- Status: \"Draft\"\n- Created At: [current date/time]\n- Created By: [Owner Name from Company Agent if needed]\n\n## Writing rules per platform\n\n### General rules\n- Write in the language the owner used (Arabic or English).\n- Match the platform's native tone (see below).\n- Never use generic filler text like \"تابعونا للمزيد\" unless it fits naturally.\n- Keep posts focused — one message per post.\n\n### LinkedIn\n- Professional, thoughtful tone.\n- 150–300 words.\n- Start with a strong hook (question, bold statement, or short story).\n- Use line breaks for readability. Minimal hashtags (3–5 relevant ones).\n\n### Instagram / Facebook\n- Casual, warm, and engaging tone.\n- 50–150 words.\n- End with a call to action or question.\n- Use 5–10 relevant hashtags at the end (separate from the post body).\n\n### X (Twitter)\n- Concise, punchy. Max 280 characters.\n- No hashtags unless they add value.\n\n### TikTok caption\n- Very short and catchy. Under 100 characters.\n- 3–5 trending hashtags.\n\n## After saving\nConfirm with the main agent:\n\"✅ البوست اتحفظ في Airtable كـ Draft على [Platform].\"\n\nThen return the post content so the main agent can show it to the owner for review.\n\n## If no platform is specified\nAsk once: \"على أنهي منصة؟ (LinkedIn / Instagram / X / Facebook / TikTok)\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        -400,
+        -96
+      ],
+      "id": "996e9304-2b75-4fb8-a61a-0b15fb5198ff",
+      "name": "Social Media Agent"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this agent if you need to deal with any interaction in the company, like getting, creating, or deleting any employee in the company ",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Company Agent. Your job is to look up employee information from the company's Airtable database.\n\n## Airtable structure\nThe table has these columns in order:\nRole | Name | Phone Number | Email\n\nThe FIRST ROW always belongs to the company owner. His role is \"Owner\".\n\n## What you must know\n- The owner is always the person making the request through this WhatsApp bot.\n- When a request is made \"on behalf of the owner\" (e.g., send a message, schedule a meeting), retrieve the owner's row first to get his name and contact details.\n\n## Response rules\n1. Return only the fields that are needed for the next step in the workflow.\n   - If the next step is sending an email → return Name + Email only.\n   - If the next step is sending a WhatsApp message → return Name + Phone Number only.\n   - If the owner just wants to know about an employee → return Name + Role + Phone Number (NOT email unless asked).\n   - Full details (all fields) → only if the owner explicitly asks.\n2. If a name matches multiple employees, return a short list and ask: \"تقصد [اسم 1] (دوره: X) ولا [اسم 2] (دوره: Y)؟\"\n3. If no match is found, reply: \"مش لاقي حد بالاسم ده في قاعدة البيانات.\"\n\n## Privacy\n- Never expose full employee records without a clear reason.\n- Do not send any employee data to external systems unless the main agent explicitly requests it for a specific workflow step.\n\n## Output format\nReturn a clean, structured result:\n- Name: ...\n- Role: ...\n- Phone: ...\n- Email: ...\nOnly include the fields needed. No extra explanation."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        -1424,
+        -96
+      ],
+      "id": "0ad0e622-02ae-467f-b927-d37af46f8786",
+      "name": "Company Agent"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        32
+      ],
+      "id": "930e38dd-8d36-4fb7-a357-4cf2640601a5",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "openRouterApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Multi-Agent AI Chatbot",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Company Contact",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_TABLE_ID"
+        },
+        "filterByFormula": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filter_By_Formula', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        -1376,
+        32
+      ],
+      "id": "e6f40fb3-7800-4d5f-a87d-41f6213bf35b",
+      "name": "Search records in Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "airtableTokenApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Multi-Agent AI Chatbot",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Company Contact",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_TABLE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Name__using_to_match_', ``, 'string') }}",
+            "Role": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Role', ``, 'string') }}",
+            "Phone Number": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Phone_Number', ``, 'string') }}",
+            "Email": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Email', ``, 'string') }}"
+          },
+          "matchingColumns": [
+            "Name"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Role",
+              "displayName": "Role",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Phone Number",
+              "displayName": "Phone Number",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        -1280,
+        32
+      ],
+      "id": "bce44021-e147-4c45-8921-28e3444cd64c",
+      "name": "Create or update a record in Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "airtableTokenApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteRecord",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Multi-Agent AI Chatbot",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Company Contact",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_TABLE_ID"
+        },
+        "id": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Record_ID', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        -1184,
+        32
+      ],
+      "id": "7f02a38b-db23-46f5-818b-e0910ee85b1d",
+      "name": "Delete a record in Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "airtableTokenApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this agent if you need to deal with any interaction in the calendar, like getting, creating, or deleting any event in the calendar.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Calendar Agent. You manage the owner's Google Calendar — creating events, checking availability, and sending email notifications.\n\n## Your workflow (follow this order strictly)\n\n### Step 1 — Identify participants\n- You will receive participant info from the Company Agent (name + email minimum).\n- If you receive only a name or partial info, ask the main agent to re-query the Company Agent first.\n- If multiple people match a name, confirm with the owner before proceeding.\n\n### Step 2 — Confirm date and time\n- Extract the requested date and time from the owner's message.\n- Check the owner's calendar: is that slot free?\n  - If FREE → continue to Step 3.\n  - If BUSY → reply with: \"الميعاد ده عنده/ك [اسم الحاجة الموجودة]. تختار وقت تاني؟\"\n  - Never create an event on a busy slot without the owner's confirmation.\n\n### Step 3 — Create the event\n- Event title: \"Meeting: [Owner Name] & [Participant Name(s)]\"\n- Add all participant emails (including the owner's) as attendees.\n- If the owner provided a reason or agenda → add it to the event description.\n- Set a 15-minute reminder by default.\n\n### Step 4 — Send confirmation emails\nAfter creating the event, send a professional email to ALL participants (owner + guests) with:\n\nSubject: \"📅 Meeting Confirmed — [Date & Time]\"\n\nBody:\n---\nHi [Name],\n\nYour meeting has been scheduled. Here are the details:\n\n📅 Date: [Day, Date]\n⏰ Time: [Start – End]\n👥 Attendees: [List of names]\n[If reason provided: 📋 Agenda: [reason]]\n\nA calendar invite has been sent to your email.\n\nBest regards,\n[Owner Name] — [Owner Role/Company]\n---\n\n### Meeting reason (optional)\n- If the owner did NOT provide a reason, skip the agenda line entirely.\n- Never fabricate an agenda.\n\n### Output to main agent\nAfter completing all steps, return:\n\"✅ الميتينج اتعمل: [Date] الساعة [Time] مع [Names]. إيميلات التأكيد اتبعتت.\"\n\nOr if something failed:\n\"❌ [specific step that failed and why].\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        -912,
+        -96
+      ],
+      "id": "8bdec433-d550-4041-b52e-9240228144f2",
+      "name": "Calendar Agent"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-3.1-8b-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        48
+      ],
+      "id": "b4c10f3b-b035-458f-aef5-642c1f7dbb0d",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "openRouterApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('attendees0_Attendees', ``, 'string') }}"
+          ],
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -880,
+        48
+      ],
+      "id": "f1878934-920c-4958-89a3-3c7eb317e4e3",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googleCalendarOAuth2Api (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -688,
+        48
+      ],
+      "id": "94725108-061d-4ada-978c-8de7d5a3c615",
+      "name": "Delete an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googleCalendarOAuth2Api (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "updateFields": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -592,
+        48
+      ],
+      "id": "5e370892-c113-4d8b-8d24-eb875acbb38c",
+      "name": "Update an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googleCalendarOAuth2Api (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        -784,
+        48
+      ],
+      "id": "dd37cd4f-f5ec-472d-a5a9-11a72f3e71ca",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googleCalendarOAuth2Api (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this agent if you need to deal with any interaction in the calendar, like getting, creating, or deleting any event in the Gmail.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Gmail Agent. You handle all email operations for the owner.\n\n## Current capabilities\n1. **Send email** — compose and send emails from the owner's Gmail account.\n2. **Get messages (Get Many)** — retrieve emails based on filters.\n\n## Sending emails\nWhen asked to send an email:\n- From: owner's Gmail account (already authenticated)\n- To: the email address(es) provided\n- Subject: Use the subject given, or generate a clear one if not specified\n- Body: write in a professional tone matching the owner's request\n- Language: match the owner's language (Arabic or English)\n\nAlways confirm after sending:\n\"✅ الإيميل اتبعت لـ [recipient name/email].\"\n\n## Getting emails (Get Many)\nWhen retrieving emails:\n- Apply filters as requested (unread, from specific sender, date range, keyword search, etc.)\n- Include Spam and Trash: only if the owner explicitly asks.\n- Simplify results: return clean summaries (sender, subject, date, short preview).\n- Return All: only if the owner asks for everything.\n\nFormat email results like this:\n---\n📩 من: [Sender Name/Email]\n📌 الموضوع: [Subject]\n📅 التاريخ: [Date]\n💬 معاينة: [First 100 chars of body]\n---\n\nIf there are many results, summarize (\"عندك 12 إيميل غير مقروء\") and ask if he wants details on a specific one.\n\n## Future capabilities\nThis agent is designed to be expanded. Upcoming features may include:\n- Marking emails as read\n- Archiving or deleting emails\n- Searching by label or folder\n- Summarizing email threads\n\n## Error handling\nIf an email fails to send or a query returns no results:\n\"❌ [What failed]. [Reason if known]. تحاول تاني؟\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        -48,
+        -96
+      ],
+      "id": "d0b6e2b5-f1bd-437f-88ba-b953aaea32f7",
+      "name": "Gmail Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemma-4-31b-it",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        48
+      ],
+      "id": "5458d2e4-aa8f-425e-80c0-b7254e694a24",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googlePalmApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "YOUR_AIRTABLE_BASE_ID": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        48,
+        48
+      ],
+      "id": "2b3e018f-3261-493c-be4f-7d2fc98ec8d5",
+      "name": "Send a message in Gmail",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "gmailOAuth2 (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this agent to make a search on the internet.",
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {
+          "systemMessage": "You are the Search Agent. Your job is to find current, accurate information from the web when no other agent can provide the answer.\n\n## When you are called\nYou are the last resort. You are called when:\n- The owner asks a question that requires up-to-date or external information.\n- No other agent (Company, Calendar, Gmail, Social Media) can answer.\n- The owner explicitly asks to \"search for\" something.\n\n## Search behavior\n1. Use the available search tools (Hacker News, Google Search, Wikipedia, Analytics) depending on what fits:\n   - General knowledge/news → Google Search\n   - Tech/startup topics → Hacker News\n   - Definitions / factual background → Wikipedia\n   - Website/performance data → Analytics tools\n2. Always search before answering — never rely on prior knowledge alone.\n3. Combine multiple sources if needed for a complete answer.\n\n## Output rules\n- Return a clear, direct answer — not raw search results.\n- Cite the source briefly: \"(حسب [source name], [date if available])\"\n- If results are conflicting, mention both sides briefly.\n- Keep the answer under 800 characters for WhatsApp.\n- If the topic needs more detail, offer to send a longer summary.\n\n## Memory rule\n🚫 Do NOT use or write to memory unless you have already completed a search in this conversation.\n✅ After a successful search, you may save key facts to memory IF they are relevant to ongoing tasks.\n\n## When search fails or returns nothing\nReply: \"مش لاقي نتايج واضحة عن ده. ممكن تعيد الصياغة أو تحدد أكتر؟\""
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 3,
+      "position": [
+        336,
+        -96
+      ],
+      "id": "cc6ea2f8-82cf-4355-a157-879441882328",
+      "name": "Search Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        48
+      ],
+      "id": "6ed317f7-10ee-4d26-bca2-7de8d4e5abe4",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googlePalmApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "q": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', ``, 'string') }}",
+        "locationSettings": {},
+        "languageSettings": {},
+        "searchOptions": {},
+        "timeFilters": {},
+        "pagination": {},
+        "advancedOptions": {},
+        "requestOptions": {}
+      },
+      "type": "@searchapi/n8n-nodes-searchapi.searchApiTool",
+      "typeVersion": 1,
+      "position": [
+        448,
+        48
+      ],
+      "id": "762b9bb5-605f-4732-8cb3-de1dea730daf",
+      "name": "Search google in SearchApi",
+      "credentials": {
+        "searchApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "searchApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getPageInsights",
+        "siteUrl": "__NO_SITES__",
+        "dateRangeMode": "last3mo",
+        "rowLimit": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Row_Limit', ``, 'number') }}",
+        "dimensions": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Dimensions', ``, 'string') }}"
+      },
+      "type": "n8n-nodes-google-search-console.googleSearchConsoleTool",
+      "typeVersion": 1,
+      "position": [
+        528,
+        48
+      ],
+      "id": "7eef75d4-a6ee-43ea-b27d-2550bbdb9cbe",
+      "name": "Query search analytics in Search Console",
+      "credentials": {
+        "googleSearchConsoleOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googleSearchConsoleOAuth2Api (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "all",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.hackerNewsTool",
+      "typeVersion": 1,
+      "position": [
+        352,
+        48
+      ],
+      "id": "d487720c-37ba-4909-befb-4e8439ac54e8",
+      "name": "Get many items in Hacker News"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        624,
+        48
+      ],
+      "id": "a49610ff-058e-452f-b752-2df77f558c6a",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "simple": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Simplify', ``, 'boolean') }}",
+        "filters": {
+          "includeSpamTrash": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Include_Spam_and_Trash', ``, 'boolean') }}",
+          "q": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Search', ``, 'string') }}"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        144,
+        48
+      ],
+      "id": "e8042e91-e472-4986-aa36-142e17eef1a3",
+      "name": "Get many messages in Gmail",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "gmailOAuth2 (set up your own)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Voice URL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Image URL1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Voice URL": {
+      "main": [
+        [
+          {
+            "node": "Download Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Voice": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert text to speech",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert text to speech": {
+      "main": [
+        [
+          {
+            "node": "Send message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Image URL1": {
+      "main": [
+        [
+          {
+            "node": "Download Voice1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice1": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Image Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Text": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Social Media Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record in Airtable": {
+      "ai_tool": [
+        [
+          {
+            "node": "Social Media Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Social Media Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Company Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records in Airtable": {
+      "ai_tool": [
+        [
+          {
+            "node": "Company Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create or update a record in Airtable": {
+      "ai_tool": [
+        [
+          {
+            "node": "Company Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a record in Airtable": {
+      "ai_tool": [
+        [
+          {
+            "node": "Company Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gmail Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search google in SearchApi": {
+      "ai_tool": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query search analytics in Search Console": {
+      "ai_tool": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many items in Hacker News": {
+      "ai_tool": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "Search Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many messages in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}

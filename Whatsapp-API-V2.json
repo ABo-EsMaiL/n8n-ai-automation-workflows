@@ -1,0 +1,98 @@
+{
+  "name": "Whatsapp API V2",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -256,
+        80
+      ],
+      "id": "8ba66456-0535-490c-ba1f-65d68ec46166",
+      "name": "When chat message received",
+      "webhookId": "REGENERATED_BY_N8N"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "YOUR_PHONE_NUMBER_ID",
+        "recipientPhoneNumber": "+20XXXXXXXXXX",
+        "textBody": "=From Server {{ $now }} : \n{{ $json.messages?.[0]?.text?.body || $json.chatInput }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.whatsApp",
+      "typeVersion": 1.1,
+      "position": [
+        -32,
+        -16
+      ],
+      "id": "cf83a71f-6549-46ba-9bc9-4b562dc05c6e",
+      "name": "Send message",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "whatsAppApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "whatsAppApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        -112
+      ],
+      "id": "d6bf1f03-74f7-4688-b0df-74430927eafc",
+      "name": "WhatsApp Trigger",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "whatsAppTriggerApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "whatsAppTriggerApi (set up your own)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

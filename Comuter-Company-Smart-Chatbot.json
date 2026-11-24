@@ -1,0 +1,228 @@
+{
+  "name": "Comuter Company Smart Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8f224ba1-7195-4636-8748-41aea7f35b62",
+      "name": "When chat message received",
+      "webhookId": "REGENERATED_BY_N8N"
+    },
+    {
+      "parameters": {
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "=YOU ARE A SALES AGENT FOR COMPUTECORE.\n\n⚠️⚠️⚠️ CRITICAL RULES - YOU MUST FOLLOW:\n\nRULE 1: YOU HAVE ZERO KNOWLEDGE ABOUT PRODUCTS\n- You do NOT know any products, prices, or inventory\n- You CANNOT answer ANY question without using Google Sheets tool\n- If you answer without the tool, you are WRONG and FAILING\n\nRULE 2: MANDATORY TOOL USAGE - NO EXCEPTIONS\n- User asks about products? → CALL GOOGLE SHEETS FIRST\n- User asks about prices? → CALL GOOGLE SHEETS FIRST  \n- User wants to buy? → CALL GOOGLE SHEETS FIRST\n- ANY product question → TOOL FIRST, THEN ANSWER\n\nRULE 3: NEVER DO THESE:\n- NEVER use your training data about computer parts\n- NEVER guess prices or product names\n- NEVER say \"based on my knowledge\"\n- NEVER show Device_ID (CP001, CP002) to customers\n\nRULE 4: SALES PROCESS:\n1. Get data from Google Sheets\n2. Format nicely (no IDs, clean categories)\n3. Show prices from sheet ONLY\n4. Calculate totals from sheet data\n5. Collect customer info (name, phone, email)\n6. Send TWO emails via Gmail tools:\n   a) Email to CUSTOMER: Order confirmation with items and total\n   b) Email to OWNER (user@example.com): Full order details with customer info\n\nRULE 5: YOU ARE AN ONLINE STORE\n- When customer wants to buy → ASK FOR THEIR INFO\n- Do NOT say \"available in store\"\n- You MUST collect: Name, Phone, Email\n- Then send BOTH emails via Gmail tools\n\nRULE 6: EMAIL CONTENT:\n\nCUSTOMER EMAIL:\n- Subject: \"Order Confirmation - ComputeCore\"\n- Message: Thank them, list ordered items with prices, show total, tell them company will contact them soon\n\nOWNER EMAIL (to user@example.com):\n- Subject: \"New Order - [Customer Name]\"\n- Message: Include ALL details:\n  • Customer Name\n  • Customer Phone\n  • Customer Email\n  • Ordered Items with prices\n  • Total Amount\n  • Request to contact customer\n\nEXAMPLE CORRECT BEHAVIOR:\nUser: \"what do you sell\"\nYou: [CALLS GOOGLE SHEETS TOOL] → then shows products\n\nUser: \"i want rtx 4090\"\nYou: [CHECKS GOOGLE SHEETS] → shows price → asks to confirm → collects info\n\nUser: \"Ahmed, 01143614351, user@example.com\"\nYou: [SENDS EMAIL TO CUSTOMER] + [SENDS EMAIL TO OWNER] → confirms order submitted\n\nEXAMPLE WRONG BEHAVIOR (NEVER DO):\nUser: \"what do you sell\"\nYou: \"We sell GPUs, CPUs...\" [WITHOUT TOOL] ❌ WRONG!\n\nALWAYS USE THE TOOL! ALWAYS! ALWAYS! ALWAYS!"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "66abd4a8-19d3-4177-a8bf-20842f18a5a8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "meta-llama/llama-3.3-70b-instruct",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "f1816575-2719-4292-b8a4-42291c45ed63",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "openRouterApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_FILE_ID",
+          "mode": "list",
+          "cachedResultName": "Comuter Company Smart Chatbot",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "الورقة1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_SHEET_ID/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        224
+      ],
+      "id": "c40132ba-cc95-42ad-a614-55bc48699199",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "notesInFlow": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googleSheetsOAuth2Api (set up your own)"
+        }
+      },
+      "notes": "⚠️ MANDATORY TOOL - YOU CANNOT WORK WITHOUT IT\n\nThis is the ONLY source of truth for all product information. You MUST call this tool before answering ANY question about:\n- What products we sell\n- Product prices\n- Product availability\n- Product specifications\n\nWithout this tool, you are BLIND and cannot help customers.\n\nCALL THIS TOOL FIRST, THEN ANSWER. NO EXCEPTIONS."
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        304,
+        208
+      ],
+      "id": "3df3d9ab-e0df-4f8a-becb-9226293af969",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        160,
+        304
+      ],
+      "id": "f4d953a0-81e9-44f4-a182-a8627c8d6ed8",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "openRouterApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "YOUR_AIRTABLE_BASE_ID": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        224
+      ],
+      "id": "2dcf921d-2051-49c1-a7f3-c85473d0512d",
+      "name": "Send a message in Gmail1",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "gmailOAuth2 (set up your own)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Send a message in Gmail1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

@@ -1,0 +1,204 @@
+{
+  "name": "Support Tickets",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableTokenApi",
+        "baseId": {
+          "__rl": true,
+          "value": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_TABLE_ID/YOUR_VIEW_ID?blocks=hide",
+          "mode": "url"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_TABLE_ID/YOUR_VIEW_ID?blocks=hide",
+          "mode": "url"
+        },
+        "triggerField": "Ticket ID",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        128,
+        -128
+      ],
+      "id": "6130fd2f-8f37-40da-82da-220652a4138a",
+      "name": "Airtable Trigger",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "airtableTokenApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the IT Support Team's coordinator. Your task is to collect incoming information about new support tickets and produce a concise summary to email to IT management. The email should be signed with \"IT Support Team.\"\n\nHere are the ticket details:\n\nTicket ID: {{ $json.fields['Ticket ID'] }}\nUser: {{ $json.fields.User }}\nIssue: {{ $json.fields.Issue }}\nPriority: {{ $json.fields.Priority }}\nDate Submitted: {{ $json.fields['Date Submition'] }}\nStatus: {{ $json.fields.Status }}\n\nIMPORTANT: Output ONLY a valid JSON object. Do not include any other text, explanations, or markdown. The JSON must have exactly two keys: \"email_subject\" and \"email_body\". The email_body must contain clean bullet points and be signed with \"IT Support Team\". Use \\n for line breaks inside the email_body string.\n\nExample structure:\n{\n  \"email_subject\": \"Support Ticket Summary: TCKT-1008 – Mobile App Crashes (High Priority)\",\n  \"email_body\": \"- Ticket ID: TCKT-1008\\n- User: Ethan Miller\\n- Issue: Mobile app crashes on startup\\n- Priority: High\\n- Date Submitted: 2026-05-29\\n- Status: In Progress\\n\\nIT Support Team\"\n}\n\nNow generate the JSON for the given ticket.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        448,
+        -128
+      ],
+      "id": "b660f9f3-6a1c-4820-ab14-428b6b728496",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        256,
+        32
+      ],
+      "id": "1b436fa4-e1e8-4414-bf44-24739ceb8a46",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "openRouterApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "user@example.com",
+        "subject": "={{ $json.output.email_subject }}",
+        "emailType": "text",
+        "message": "={{ $json.output.email_body }}",
+        "options": {
+          "YOUR_AIRTABLE_BASE_ID": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        -128
+      ],
+      "id": "b5862a53-cf02-4c82-8ac4-0e9eaf789174",
+      "name": "Send a message",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "gmailOAuth2 (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"email_subject\": \"Support Ticket Summary: TCKT-1008 – Mobile App Crashes (High Priority)\",\n  \"email_body\": \"- Ticket ID: TCKT-1008\\n- User: Ethan Miller\\n- Issue: Mobile app crashes on startup\\n- Priority: High\\n- Date Submitted: 2026-05-29\\n- Status: In Progress\\n\\nIT Support Team\"\n}",
+        "autoFix": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        544,
+        64
+      ],
+      "id": "5d087a1a-0b50-4c48-8685-c01ac79bef46",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        560,
+        272
+      ],
+      "id": "4fab3653-9acd-42d6-b818-f0f1b0c48df9",
+      "name": "OpenRouter Chat Model1",
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "openRouterApi (set up your own)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Structured Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

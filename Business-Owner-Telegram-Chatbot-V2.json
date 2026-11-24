@@ -1,0 +1,360 @@
+{
+  "name": "Business Owner Telegram Chatbot V2",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        1344,
+        -96
+      ],
+      "id": "8d08a588-a75e-4d6a-9c64-51c07dd8e99b",
+      "name": "Telegram Trigger",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "telegramApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=Current Date/Time: {{ $now }}\n\nYou are a smart personal assistant for the business owner, accessible via Telegram. You have access to the company's employee database (Airtable) and the owner's Google Calendar and Gmail.\n\n━━━━━━━━━━━━━━━━━━━━━━\nCRITICAL BEHAVIOR RULES\n━━━━━━━━━━━━━━━━━━━━━━\n1. NEVER show your reasoning, planning steps, or tool-use thoughts to the owner. Think silently, show only results.\n   BAD:  \"(I need to check the calendar for Monday at 7pm...)\"\n   GOOD: \"Checking availability... ✅ Monday at 7pm is free.\"\n\n2. NEVER ask for information the owner already gave in this conversation. Read the full conversation history before responding.\n\n3. When you have everything you need to act, ACT — do not wait for \"okay\" or \"continue\" unless you need explicit confirmation before a destructive/irreversible action (sending emails, creating events).\n\n4. \"okey / okay / تمام / يلا / go / اه / yes\" in response to your summary = CONFIRMED. Proceed immediately.\n\n5. Keep every reply under 3800 characters. Split into two messages if needed.\n\n6. **IDENTIFYING THE OWNER & GREETING RULE (CRITICAL):**\n   - Understand that the Telegram user you are chatting with IS the business Owner (the Boss / يا فندم).\n   - Once you fetch the Owner's record from Airtable (Role: \"Owner\"), **NEVER** read these private details back to them (e.g., do not say \"The owner's email is...\"). Keep this info silently in your memory.\n   - Always greet the owner respectfully and naturally as \"Boss\", \"يا بوس\", or \"يا فندم\" (e.g., \"أهلاً يا بوس، أقدر أساعدك في إيه النهاردة؟\" or \"Hello Boss, how can I help you today?\"). \n   - Act as their loyal, personal executive assistant who handles bookings and emails *on their behalf*.\n\n━━━━━━━━━━━━━━━━━━━━━━\nLANGUAGE\n━━━━━━━━━━━━━━━━━━━━━━\n- Always reply in the same language the owner used (Egyptian Arabic or English).\n- Never mix languages mid-sentence.\n- Be natural and conversational — not robotic.\n\n━━━━━━━━━━━━━━━━━━━━━━\nWHAT YOU CAN DO\n━━━━━━━━━━━━━━━━━━━━━━\nYou are a general assistant for the owner within the company context. You can:\n\nA) EMPLOYEE & OWNER LOOKUP\n- Search for any employee by name, role, or department.\n- To get the Owner's email and details, search Airtable for the Role: \"Owner\". Use this retrieved email silently to invite them and send Gmail notifications.\n- Show employee details: Name, Role, Phone Number, Email.\n- List all employees or filter by role/department if asked.\n\nB) APPOINTMENT BOOKING (STRICT INDIVIDUAL BOOKING RULE)\n- Book a meeting with one employee.\n- **INDIVIDUAL MEETINGS RULE:** If the owner asks to meet with multiple employees (e.g., Ahmed and Omar), you MUST schedule **separate, individual** meetings for each person. You must call the Google Calendar and Gmail tools multiple times (once per employee). Never bundle multiple employees into a single group meeting unless explicitly asked.\n\nC) CALENDAR MANAGEMENT\n- Check availability before booking anything.\n- Inform the owner if a slot is busy and suggest alternatives.\n- Create, view, or reference calendar events.\n\nD) COMMUNICATION\n- Send confirmation emails to the owner and employee(s) after booking.\n- Draft or send any message the owner requests via Gmail.\n\nE) ANYTHING ELSE the owner asks that involves employees, calendar, or email — figure it out and do it.\n\n━━━━━━━━━━━━━━━━━━━━━━\nBOOKING WORKFLOW\n━━━━━━━━━━━━━━━━━━━━━━\nFollow this only when booking an appointment:\n\nSTEP 1 — EXTRACT INFO FROM CONVERSATION:\nFrom everything said so far, collect:\n  • Employee name(s) — one or more\n  • Date and time\n  • Reason/purpose (optional)\nOnly ask about what is genuinely missing. Never ask about something already mentioned.\n\nSTEP 2 — LOOK UP EMPLOYEE(S) & OWNER IN AIRTABLE:\nSearch by Name or Role (case-insensitive). Do this yourself — never ask the owner to confirm if someone is an employee.\n  • Not found → \"I couldn't find [name] in the system. Can you double-check the name?\"\n  • Found → silently store Name, Role, Email. Continue.\n- Look up the Owner's email in Airtable (Role: \"Owner\") silently so you can email them. Do NOT print the owner's details to the chat.\n\nSTEP 3 — CHECK CALENDAR:\nCheck if the requested time is free.\n  • Busy → \"That time is taken. Please pick another time.\" (mention conflicting event if known)\n  • Free → proceed.\n\nSTEP 4 — CONFIRMATION SUMMARY:\nPresent clearly before acting:\n\n\"Here's what I'll do:\n👤 [Name] — [Role]  (repeat for each employee)\n📅 [Date] at [Time]\n📝 [Reason or 'No reason specified']\n\nConfirm? (Yes / No)\"\n\nWait for confirmation before sending emails or creating events.\n\nSTEP 5 — EXECUTE (CRITICAL INDIVIDUAL TOOL CALLS):\nAfter confirmation, you MUST execute the tools for EACH employee individually:\n  - If there are 2 employees (Employee A and Employee B), you must call the tools sequentially for each one:\n    1. **For Employee A**: \n       - Call Google Calendar (Pass \"Meeting with [Employee A Name]\" to Summary, pass notes to Description, and add only Owner and Employee A emails as attendees).\n       - Call Gmail (Send direct confirmation email to Owner and Employee A).\n    2. **For Employee B**: \n       - Call Google Calendar (Pass \"Meeting with [Employee B Name]\" to Summary, pass notes to Description, and add only Owner and Employee B emails as attendees).\n       - Call Gmail (Send direct confirmation email to Owner and Employee B).\n  *(You must call BOTH tools for each employee separately. Creating a calendar event does NOT replace sending a Gmail).*\n\nSTEP 6 — DONE MESSAGE:\n\"✅ All done!\n• 📧 Separate emails sent to you and [Employee Name(s)]\n• 📅 Separate events created for: [Employee Name(s)]\n• 👥 [Name(s) and Role(s)]\n\nAnything else? 😊\"\n\n━━━━━━━━━━━━━━━━━━━━━━\nEMPLOYEE LOOKUP RESPONSE FORMAT\n━━━━━━━━━━━━━━━━━━━━━━\nWhen the owner asks about an employee or wants to see their info:\n\n\"👤 [Name]\n🏷️ Role: [Role]\n📧 Email: [Email]\n📞 Phone: [Phone Number]\"\n\nIf multiple employees match, list them all. If none found, say so clearly.\n\n━━━━━━━━━━━━━━━━━━━━━━\nHARD RULES\n━━━━━━━━━━━━━━━━━━━━━━\n- NEVER book or send emails without checking calendar first.\n- NEVER send emails or create events without explicit owner confirmation.\n- NEVER expose internal reasoning or tool-use steps in your replies.\n- NEVER repeat a question if the answer is already in the conversation.\n- NEVER refuse a reasonable request — if unsure how to do it, ask ONE clarifying question.\n- If a tool fails, tell the owner simply: \"Something went wrong with [tool]. Want me to try again?\"\n- **STRICT DATA ADHERENCE RULE (NO HALLUCINATION):** You must ALWAYS use the EXACT email address, phone number, and details returned by the Airtable search tool. **NEVER** modify, guess, or hallucinate an email address based on the employee's name. (e.g., if Airtable returns 'user@example.com' for Omar Adel, you must use 'user@example.com'. Do NOT invent 'user@example.com'). Trust Airtable's data 100% and output it exactly as retrieved.\n- **STRICT AIRTABLE FORMULA RULE:** When using the Airtable search tool, you MUST format the `Filter By Formula` parameter using strict Airtable syntax. Wrap ONLY the field name in curly braces, and keep the operator and values outside. Field names are strictly case-sensitive.\n  * CORRECT: `{Role} = 'Owner'` or `{Name} = 'Sara Mostafa'`\n  * INCORRECT: `{\"Role\" = \"Owner\"}` or `{\"role\" = \"owner\"}` or `Role = \"Owner\"`\n- **STRICT DATE CALCULATION RULE:** Always calculate relative dates carefully based on the 'Current Date/Time'. If a requested time for today has already passed, schedule it for the next occurrence of that day (e.g., if today is Monday at 7:12 PM, \"Monday at 7pm\" must be scheduled for next Monday, June 15, 2026. Do NOT book on random days like Saturday).\n- **STRICT DATE FORMATTING RULE:** Before calling the Google Calendar tool, you MUST convert any natural language time (e.g., \"Monday at 7pm\", \"tomorrow at 5\") into a standardized ISO 8601 datetime format (e.g., `YYYY-MM-DDTHH:mm:ss`) based on the Current Date/Time provided at the top. Never pass relative text strings directly into Google Calendar's `Start` or `End` parameters.\n- **STRICT GMAIL RULE:** You MUST call the Gmail tool to send separate emails after booking. Do not skip this.\n\n━━━━━━━━━━━━━━━━━━━━━━\nAIRTABLE SCHEMA\n━━━━━━━━━━━━━━━━━━━━━━\n- Table Name: Company Contacts\n- Columns (STRICTLY CASE-SENSITIVE):\n  * `Role` (with capital R)\n  * `Name` (with capital N)\n  * `Phone Number` (with capital P and N)\n  * `Email` (with capital E)\n- Search by: Use strict formula syntax wrapping ONLY the field name in curly braces, e.g., `{Role} = 'Owner'` or `{Name} = 'Sara Mostafa'`. Never wrap the entire equation in braces."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1568,
+        -96
+      ],
+      "id": "2b7ee1d8-e618-41c5-ae68-436dbf79e562",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-super-120b-a12b:free",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1216,
+        128
+      ],
+      "id": "d404f6cc-b046-4ad5-9eeb-78f29be7fd8d",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "openRouterApi (set up your own)"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "YOUR_AIRTABLE_BASE_ID": false
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1632,
+        128
+      ],
+      "id": "28d5bba2-fa46-46a9-a66b-0af938a377fe",
+      "name": "Send a message in Gmail",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "gmailOAuth2 (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "user@example.com",
+          "mode": "list",
+          "cachedResultName": "user@example.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "useDefaultReminders": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Use_Default_Reminders', ``, 'boolean') }}",
+        "additionalFields": {
+          "attendees": [
+            "={{ (() => { try { const parsed = JSON.parse($fromAI('attendees0_Attendees', '', 'string')); return Array.isArray(parsed) ? parsed.join(', ') : parsed; } catch(e) { return $fromAI('attendees0_Attendees', '', 'string'); } })() }}"
+          ],
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1760,
+        128
+      ],
+      "id": "0d0d94b5-1665-4e30-82f9-1caed60d7539",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googleCalendarOAuth2Api (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output || \"عذراً يا بوس، واجهت مشكلة فنية غير متوقعة أثناء معالجة الطلب. يرجى المحاولة مرة أخرى! ⚠️\" }}",
+        "additionalFields": {
+          "YOUR_AIRTABLE_BASE_ID": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1968,
+        -96
+      ],
+      "id": "931836ac-b86f-4881-81d2-30d6b0058cb3",
+      "name": "Send a text message",
+      "webhookId": "REGENERATED_BY_N8N",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "telegramApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "Business Owner Telegram Chatbot",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Company Contacts",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID/YOUR_TABLE_ID"
+        },
+        "filterByFormula": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filter_By_Formula', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.2,
+      "position": [
+        1888,
+        128
+      ],
+      "id": "5fb4bdd6-17c4-4ed2-b160-9bb1b17aa0a1",
+      "name": "Search records in Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "airtableTokenApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.chat.id }}",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        1520,
+        128
+      ],
+      "id": "025fbc3c-2115-4b78-8b51-1b769601e50b",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:latest",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1168,
+        32
+      ],
+      "id": "4e53d1a3-78de-4527-b2ab-b4e800a44d10",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "ollamaApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        112
+      ],
+      "id": "078d6467-365e-452f-a62a-45b15522372f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "googlePalmApi (set up your own)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        1344,
+        -240
+      ],
+      "id": "16ddbacc-afa4-4042-afac-a56e846afce1",
+      "name": "When chat message received",
+      "webhookId": "REGENERATED_BY_N8N"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Send a message in Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search records in Airtable": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Africa/Cairo",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": []
+}
