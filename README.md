@@ -1,35 +1,86 @@
-# n8n AI Automation Workflows
+<h1 align="center">n8n AI Automation Workflows</h1>
+<p align="center"><b>19 importable n8n workflows: AI agents, RAG chatbots, WhatsApp and Telegram bots, and small business automations.</b></p>
 
-19 n8n workflows I built while learning to wire LLMs, vector search and business tools together. They cover AI agents, RAG chatbots, WhatsApp and Telegram bots, and small business automations.
+<p align="center">
+  <img alt="n8n" src="https://img.shields.io/badge/n8n-workflows-EA4B71?logo=n8n&logoColor=white">
+  <img alt="OpenRouter" src="https://img.shields.io/badge/LLMs-OpenRouter%20%7C%20Gemini%20%7C%20Ollama-6366F1">
+  <img alt="Pinecone" src="https://img.shields.io/badge/Vector%20DB-Pinecone-000000">
+  <img alt="WhatsApp" src="https://img.shields.io/badge/WhatsApp-Cloud%20API-25D366?logo=whatsapp&logoColor=white">
+  <img alt="Telegram" src="https://img.shields.io/badge/Telegram-Bot%20API-26A5E4?logo=telegram&logoColor=white">
+</p>
 
-All credentials, account IDs, emails, phone numbers and file IDs were removed. Import a workflow, then connect your own accounts.
+I built these while learning how to connect LLMs, vector search and everyday business tools without writing a backend. Each file is one workflow. Import it, connect your own accounts, and it runs.
 
-## Workflows
+All credentials, emails, phone numbers and file IDs were removed. Placeholders look like `YOUR_...`.
 
-| Group | Files | What they do |
+## What is inside
+
+| Group | Workflows | What they do |
 |---|---|---|
-| Chat agents | `AI-Agent`, `Comuter-Company-Smart-Chatbot` | Chat-triggered AI agent with memory. The company bot reads a Google Sheet and can send Gmail messages. |
-| RAG | `Rag-Chatbot`, `Rag-Chatbot-V2`, `Rag-Chatbot-V3-Perfect`, `Collect-Files-Rag`, `Collect-Files-Rag-v2` | Watch or scan a Google Drive folder, split files, embed them with Ollama, store them in Pinecone, and answer questions through an agent using OpenRouter models. The Collect-Files versions track processed files in a Google Sheet. |
-| Telegram | `Business-Owner-Telegram-Chatbot` (+V2), `Telegram-API-Sentiment-Analysis` | Agent that reads Airtable, sends Gmail and creates Google Calendar events. The sentiment bot logs results to Google Sheets. |
-| WhatsApp | `WhatsApp-API`, `Whatsapp-API-V2`, `Super-AI-Chatbot`, `Multi-Agent-AI-Chatbot` | WhatsApp Cloud API bots. Super AI Chatbot handles text and voice notes with Gemini. Multi-Agent splits work across several specialist agents with Airtable, Calendar and search tools. |
-| Business automation | `Support-Tickets`, `Hotel-Reservations`, `Smart-Car-Dealership`, `Gmail-Auto`, `Sentiment-Analysis` | Ticket triage with an LLM chain and structured output, a reservation form that writes to Airtable, a webhook that sends email, scheduled Gmail logging, and form-based sentiment analysis. |
+| **Chat agents** | `AI-Agent`, `Comuter-Company-Smart-Chatbot` | Chat-triggered agent with memory. The company bot reads a Google Sheet and sends Gmail messages. |
+| **RAG** | `Rag-Chatbot`, `Rag-Chatbot-V2`, `Rag-Chatbot-V3-Perfect`, `Collect-Files-Rag`, `Collect-Files-Rag-v2` | Watch a Google Drive folder, split and embed files, store them in Pinecone, and answer questions over them. |
+| **Telegram** | `Business-Owner-Telegram-Chatbot` (+V2), `Telegram-API-Sentiment-Analysis` | An assistant for a business owner that reads Airtable, sends Gmail and books Google Calendar events. A sentiment bot logs results to Sheets. |
+| **WhatsApp** | `WhatsApp-API`, `Whatsapp-API-V2`, `Super-AI-Chatbot`, `Multi-Agent-AI-Chatbot` | WhatsApp Cloud API bots. Super AI Chatbot handles text, voice notes and images with Gemini. Multi-Agent routes work to five specialist agents (Calendar, Gmail, Company/Airtable, Social media, Search) and also handles images and spoken replies. |
+| **Business automation** | `Support-Tickets`, `Hotel-Reservations`, `Smart-Car-Dealership`, `Gmail-Auto`, `Sentiment-Analysis` | Ticket triage with structured LLM output, a reservation form that writes to Airtable, a webhook that sends email, scheduled Gmail logging, and form-based sentiment analysis. |
 
-Version numbers (V2, V3) are my iterations on the same idea.
+V2 and V3 files are my own later iterations of the same idea.
 
-## Stack
+## How the RAG chatbot works
 
-n8n, OpenRouter, Google Gemini, Ollama (local embeddings and chat), Pinecone, Google Drive, Sheets, Gmail and Calendar, Airtable, Telegram Bot API, WhatsApp Cloud API.
+```mermaid
+flowchart LR
+    subgraph Ingest
+      A[Google Drive<br/>new file trigger] --> B[Download file] --> C[Split text] --> D[Ollama embeddings] --> E[(Pinecone)]
+    end
+    subgraph Chat
+      F[Chat message] --> G[AI agent<br/>OpenRouter model]
+      G <--> H[Vector store tool] <--> E
+      G --> I[Answer with context]
+    end
+```
 
-## How to use
+The `Collect-Files-Rag` versions add a Google Sheet that tracks which files were already processed, so a scheduled run only embeds new ones.
 
-1. In n8n choose *Import from file* and pick one of the `.json` files in this repository.
-2. Create credentials for each node that asks for one.
-3. Replace the placeholders (`YOUR_AIRTABLE_BASE_ID`, `YOUR_DRIVE_FOLDER_ID`, `YOUR_SHEET_ID`, `YOUR_PHONE_NUMBER_ID`).
-4. Run a test execution.
+## How the multi-agent WhatsApp bot works
+
+```mermaid
+flowchart LR
+    W[WhatsApp message] --> S{Text, voice<br/>or image?}
+    S -->|voice| T[Download and transcribe] --> M
+    S -->|image| V[Analyze image] --> M
+    S -->|text| M[Main agent<br/>Gemini + memory]
+    M --> A1[Calendar agent]
+    M --> A2[Gmail agent]
+    M --> A3[Company agent<br/>Airtable]
+    M --> A4[Social media agent]
+    M --> A5[Search agent<br/>web, Wikipedia, Hacker News]
+    M --> R[Reply as text or speech]
+```
+
+## Quick start
+
+1. In n8n choose **Import from file** and pick one `.json` from this repository.
+2. Create credentials for every node that asks for one (OpenRouter, Google, Airtable, Pinecone, Telegram or WhatsApp).
+3. Replace the placeholders: `YOUR_AIRTABLE_BASE_ID`, `YOUR_DRIVE_FOLDER_ID`, `YOUR_SHEET_ID`, `YOUR_PHONE_NUMBER_ID`.
+4. Run a test execution, then activate the workflow.
+
+Some workflows use local [Ollama](https://ollama.com) models for embeddings or chat. Install Ollama first or swap the node for a hosted model.
+
+## Skills these show
+
+- Agent design: memory, tool calling, routing between several agents
+- RAG: ingestion, chunking, embeddings, retrieval
+- Integrations: WhatsApp Cloud API, Telegram, Gmail, Calendar, Sheets, Airtable
+- Structured LLM output for classification and ticket triage
 
 ## Limitations
 
-- These are working prototypes. I have not measured accuracy or latency, and none run in production.
-- Some workflows need local Ollama models.
+- These are working prototypes. I have not measured answer quality or latency, and none ran in production.
+- The names keep my original spelling, for example `Comuter-Company-Smart-Chatbot.json`.
 - Webhook and trigger URLs are regenerated by n8n when you import.
-- File names keep my original spelling (for example `Comuter-Company-Smart-Chatbot.json`).
+
+## Ideas for next versions
+
+- [ ] Add a small evaluation set for the RAG bots
+- [ ] Add screenshots of each workflow canvas
+- [ ] Replace local Ollama with a hosted embedding option for easier setup
